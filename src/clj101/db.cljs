@@ -1,4 +1,4 @@
-(ns clj101.persons)
+(ns clj101.db)
 
 (def people {:persons {"Peter"
                        {:name "Peter"
@@ -27,16 +27,29 @@
                                  :company-name "Palo"
                                  :role "Accountant"}]})
 
-(defn add-person [db person]
-  (if (and
-        (= (:name person) "")
-        (= (:address person) "")
-        (= (:phone person) ""))
-    (update-in db [:persons] conj [(:name person) person])
-    (throw (js/Error. "Person info incomplete"))))
+(defn wrap-exception [f args]
+  (try
+    (apply f args)
+    (catch js/Error e
+      (do
+        (println "EXCEPTION: " (.-message e))
+        (throw e)))))
 
-(defn add-company [db company]
-  (update-in db [:companies] conj [(:name company) company]))
+
+(defn dispatch! [f & args]
+  (let [r (wrap-exception f args)]
+    (println (str "dispatch: " f " : " args))
+    (println (str "result: " r))
+    r))
+
+(defn add-person [db {:keys [name address phone] :as person}]
+  (if
+    (every? #(not= "" %) [name address phone])
+    (update-in db [:persons] conj [(:name person) person])
+    (throw (js/Error. "Person info incomplete %s" person))))
+
+(defn add-company [db {company-name :name :as company}]
+  (update-in db [:companies] conj [company-name company]))
 
 (defn person-exists? [db person-name]
   (some? (get-in db [:persons person-name])))
@@ -47,9 +60,9 @@
 (defn role-exists? [db role]
   (some? (seq (filter #(= role %) (:roles db)))))
 
-(defn update-person [db person]
-  (if (person-exists? db (:name person))
-    (assoc-in db [:persons (:name person)] person)
+(defn update-person [db {name :name :as person}]
+  (if (person-exists? db name)
+    (assoc-in db [:persons name] person)
     (throw (js/Error. "Person not found"))))
 
 (defn delete-person [db person-name]
