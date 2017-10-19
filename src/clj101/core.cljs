@@ -32,8 +32,8 @@
 (defn on-js-reload []
   (swap! app-state update-in [:__figwheel_counter] inc))
 
-(defn render-app [s]
-  (ReactDOM.render (ui/form-persons s)
+(defn render-app [store]
+  (ReactDOM.render (ui/app store)
                    (.getElementById js/document "app")))
 
 

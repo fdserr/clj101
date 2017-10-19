@@ -51,6 +51,49 @@
 
 ;;;;;;;;;;;;;;;;;;; pers form
 
+;; home
+;;;; persons
+;;;; companies
+;;;; roles
+
+(defn navigation [store]
+  (html [:ul
+         [:li {:on-click #(db/dispatch! swap! store assoc :screen :home)} "HOME"]
+         [:li {:on-click #(db/dispatch! swap! store assoc :screen :persons)} "PERSONS"]
+         [:li {:on-click #(db/dispatch! swap! store assoc :screen :companies)} "COMPANIES"]
+         [:li {:on-click #(db/dispatch! swap! store assoc :screen :roles)} "ROLES"]]))
+
+(defmulti screen
+  "doc"
+  (fn [store]
+    (get @store :screen :home))
+  :default :home)
+
+(defmethod screen :home
+  [store]
+  (html [:h1 "HOME"]))
+
+(defmethod screen :persons
+  [store]
+  (html [:h1 "PERSONS"]))
+
+(defmethod screen :companies
+  [store]
+  (html [:h1 "COMPANIES"]))
+
+(defmethod screen :roles
+  [store]
+  (html [:h1 "ROLES"]))
+
+(defn app [store]
+  (html
+   [:div
+    [:h1 "APP"]
+    (screen store)
+    (navigation store)]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn form-persons [app-state]
   (let [db-value @app-state
         person (get db-value :edit {:name "" :address "" :phone ""})]
@@ -62,16 +105,11 @@
                  :placeholder "Name"
                  :value (:name person)
                 ;  :on-change #(throttle-input)
-                 :on-change #(throttle-input
-                              app-state
-                              (fn [e]
-                                (-> e
+                 :on-change (fn [e]
+                                (-> (.persist e)
                                     (assoc :name (-> e .-target .-value))
                                     (assoc :address (:address person))
-                                    (assoc :phone (:phone person))))
-                              %)}]
-
-
+                                    (assoc :phone (:phone person))))}]
         [:br]
         [:input {:type "text"
                  :placeholder "Address"
